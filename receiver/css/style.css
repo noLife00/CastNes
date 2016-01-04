@@ -1,0 +1,25 @@
+ body {
+			overflow:hidden;
+			background-color: black; 
+		  }
+		  div{
+			height:720PX;
+			width:1280PX;
+			text-align:center;
+			border:0px solid silver;
+			display: table-cell;
+			vertical-align:middle;
+			color:#FFFFFF;
+			background-color:#000000;
+			font-weight:bold;
+			font-family:Verdana, Geneva, sans-serif;
+			font-size:40px;
+		}
+		canvas.nes {
+    align-self: center;
+	padding-left: 0;
+    padding-right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}

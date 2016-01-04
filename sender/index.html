@@ -1,0 +1,122 @@
+<html data-cast-api-enabled="true">
+  <head>
+    <title>chromecast-nes</title>
+  </head>  
+  <link rel="stylesheet" type="text/css" href="css/style.css"> 
+  <body>
+    <div class="nes">Loading...</div>    
+  </body>
+<script src="js/jquery-1.4.2.min.js"></script>
+<script src="js/dynamicaudio-min.js"></script>
+<script src="js/jsnes.js"></script>
+<script type="text/javascript" src="//www.gstatic.com/cv/js/sender/v1/cast_sender.js"></script>
+<script>
+
+var jsnes;
+var applicationID = 'YOUR APP ID';
+var namespace = 'urn:x-cast:com.pwr699.nescast';
+var session = null;
+
+$(function () {
+	// Wait for API to post a message to us
+
+	if (!chrome.cast || !chrome.cast.isAvailable) {
+		setTimeout(initializeApi, 1000);
+	}
+
+	function initializeApi() {
+		console.log("initializeApi()");
+
+		var sessionRequest = new chrome.cast.SessionRequest(applicationID);
+		var apiConfig = new chrome.cast.ApiConfig(sessionRequest,
+				sessionListener,
+				receiverListener);
+
+		chrome.cast.initialize(apiConfig, onInitSuccess, onError);
+	};
+	function onSuccess(message) {
+	  console.log("onSuccess: "+message);
+	}
+
+	function onInitSuccess() {
+		console.log("onInitSuccess");
+	}
+
+	function onError(message) {
+		console.log("onError: " + JSON.stringify(message));
+	}
+
+	function sessionListener(e) {
+		console.log('New session ID:' + e.sessionId);
+		session = e;
+		session.addUpdateListener(sessionUpdateListener);
+		session.addMessageListener(namespace, receiverMessage);
+	}
+
+	function sessionUpdateListener(isAlive) {
+		var message = isAlive ? 'Session Updated' : 'Session Removed';
+		message += ': ' + session.sessionId;
+		console.log(message);
+		if (!isAlive) {
+			session = null;
+		}
+	};
+	
+	function receiverListener(e) {
+	  if( e === 'available' ) {
+		console.log("receiver found");
+		onLaunch();
+	  }
+	  else {
+		console.log("receiver list empty "+e);
+	  }
+	}
+	
+	function receiverMessage(namespace, message) {
+	  console.log("receiverMessage: "+namespace+", "+message);
+	};
+	
+	
+
+	function onLaunch() {
+		
+			console.log("onLaunch");
+			jsnes = new JSNES({
+					'preferredFrameRate' : 40,
+					'swfPath' : '/swf/',
+					'ui' : $('.nes').text('').JSNESUI({
+						"Working" : [
+							['Dr Mario', 'roms/drmario.nes'],
+							['Sir Ababol', 'roms/ababol.nes']
+						],
+					}),
+				});
+			
+			var canvas = $(".nes-screen")[0];
+			console.log(canvas);
+
+			var json = {
+				"type" : "writeFrame",
+				"frame" : canvas.toDataURL()
+			};
+			//var json = canvas.toDataURL()+"";
+			 sendMessage(json);
+			 
+			jsnes.setSender(session, namespace, onSuccess, onError);
+	};
+	
+	function sendMessage(message) {
+	  if (session!=null) {
+		session.sendMessage(namespace, message, onSuccess.bind(this, "Message sent: " + message), onError);
+	  }
+	  else {
+		chrome.cast.requestSession(function(e) {
+			session = e;
+			session.sendMessage(namespace, message, onSuccess.bind(this, "Message sent: " + message), onError);
+		  }, onError);
+	  }
+	}
+
+});
+</script>
+</html>
